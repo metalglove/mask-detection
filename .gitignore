@@ -1,0 +1,9 @@
+.vscode/
+.history/
+
+**/logs/*
+**/checkpoints/*
+**/.ipynb_checkpoints/*
+**/weights/*
+**/__pycache__/*
+
