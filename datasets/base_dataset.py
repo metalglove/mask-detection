@@ -26,7 +26,7 @@ class DatasetBase(ABC):
         self.train_ds = self.train_ds.cache().repeat()
         self.val_ds = self.val_ds.cache().repeat()
         self.actual_test_ds = self.test_ds.take(self.test_size)
-        self.test_ds = self.test_ds.skip(self.test_size).cache().repeat().as_numpy_iterator()
+        self.test_ds = self.test_ds.skip(self.test_size).cache().repeat()#.as_numpy_iterator()
     
     def shuffle(self, buffer_size):
         # shuffles the dataset and batches it to the batch_size
