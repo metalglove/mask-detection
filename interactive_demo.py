@@ -15,17 +15,21 @@ assert root_path.endswith("mask-detection"), "The root path does not end with ma
 sys.path.insert(0, root_path)
 face_cascade = cv2.CascadeClassifier(root_path + '/haarcascade_frontalface_default.xml')
 mask_detection_model = tf.keras.models.load_model(root_path + '/models/detection_cnn')
-#mask_judge_model = 
+mask_judge_model = tf.keras.models.load_model(root_path + '/models/judge_cnn')
 
 # Define functions
-def process_img(frame):
-    frame = cv2.resize(frame, (200, 200))
+def process_img(frame, size:tuple):
+    frame = cv2.resize(frame, size)
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     img_array = frame[np.newaxis, ...] # Ellipsis object
     return img_array
 
-def predict(img_array):
+def predict_detection(img_array):
     prediction_val = np.matrix.item(mask_detection_model.predict(img_array))
+    return prediction_val > 0.5, prediction_val
+
+def predict_judgement(img_array):
+    prediction_val = mask_detection_model.predict(img_array)
     return prediction_val > 0.5, prediction_val
 
 # Start video capture and start retrieving frames/images from video capture
@@ -45,17 +49,17 @@ while rval:
     # Draw rectangle around each face
     for (x, y, w, h) in faces: 
         face_img = frame[y:y + h, x:x + w]
-        img_array = process_img(face_img)
-        detected, _ = predict(img_array)
+        img_array = process_img(face_img, (200, 200))
+        detected, val = predict_detection(img_array)
         # Visualising
         color = (255,0,0) # (B,G,R)
         cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
         if detected:
-            #correct = <predict_correctly_worn>
-            base_text = "MASK DETECTED"
-            text = base_text + " - CORRECTLY WORN" if correct else base_text + " - INCORRECTLY WORN"
+            img_array = process_img(face_img, (128, 128))
+            correct = predict_judgement(img_array)
+            text = "MASK - CORRECTLY WORN" if correct else "MASK - INCORRECTLY WORN"
         else:
-            text = "NO MASK DETECTED"
+            text = "NO MASK"
         cv2.putText(frame, f'{text}', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
     # Display
     cv2.imshow("Mask Detection - Interactive Demo", frame)
