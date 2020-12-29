@@ -29,8 +29,8 @@ def predict_detection(img_array):
     return prediction_val > 0.5, prediction_val
 
 def predict_judgement(img_array):
-    prediction_val = mask_detection_model.predict(img_array)
-    return prediction_val > 0.5, prediction_val
+    prediction_val = mask_judge_model.predict(img_array)
+    return prediction_val[0][0] > 0.5, prediction_val[0][0]
 
 # Start video capture and start retrieving frames/images from video capture
 vc = cv2.VideoCapture(0)
@@ -56,8 +56,13 @@ while rval:
         cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
         if detected:
             img_array = process_img(face_img, (128, 128))
-            correct = predict_judgement(img_array)
-            text = "MASK - CORRECTLY WORN" if correct else "MASK - INCORRECTLY WORN"
+            correct, val = predict_judgement(img_array)
+            if correct:
+                color = (0,255,0)
+                text = "MASK - CORRECTLY WORN" 
+            else:
+                color = (0,0,255)
+                text = "MASK - INCORRECTLY WORN"
         else:
             text = "NO MASK"
         cv2.putText(frame, f'{text}', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
