@@ -24,13 +24,9 @@ def process_img(frame, size:tuple):
     img_array = frame[np.newaxis, ...] # Ellipsis object
     return img_array
 
-def predict_detection(img_array):
-    prediction_val = np.matrix.item(mask_detection_model.predict(img_array))
+def predict(img_array, model):
+    prediction_val = np.matrix.item(model.predict(img_array))
     return prediction_val > 0.5, prediction_val
-
-def predict_judgement(img_array):
-    prediction_val = mask_judge_model.predict(img_array)
-    return prediction_val[0][0] > 0.5, prediction_val[0][0]
 
 # Start video capture and start retrieving frames/images from video capture
 vc = cv2.VideoCapture(0)
@@ -47,16 +43,20 @@ while rval:
     # Detect the face(s)
     faces = face_cascade.detectMultiScale(gray, 1.1, 4)
     # Draw rectangle around each face
-    for (x, y, w, h) in faces: 
-        face_img = frame[y:y + h, x:x + w]
+    for (x, y, w, h) in faces:
+        val = 50
+        width = int(vc.get(3))
+        height = int(vc.get(4))
+         # Cropping the frame, increasing by custom value and making sure it doesn't go out of bounds
+        face_img = frame[max(y-val,0):min(y+h+val,height), max(x-val,0):min(x+w+val,width)]
+        #cv2.imwrite(root_path + '/test_img.jpg', face_img) # For testing to see the crop size
         img_array = process_img(face_img, (200, 200))
-        detected, val = predict_detection(img_array)
+        detected, val = predict(img_array, mask_detection_model)
         # Visualising
         color = (255,0,0) # (B,G,R)
-        cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
         if detected:
             img_array = process_img(face_img, (128, 128))
-            correct, val = predict_judgement(img_array)
+            correct, val = predict(img_array, mask_judge_model)
             if correct:
                 color = (0,255,0)
                 text = "MASK - CORRECTLY WORN" 
@@ -65,6 +65,7 @@ while rval:
                 text = "MASK - INCORRECTLY WORN"
         else:
             text = "NO MASK"
+        cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
         cv2.putText(frame, f'{text}', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
     # Display
     cv2.imshow("Mask Detection - Interactive Demo", frame)
