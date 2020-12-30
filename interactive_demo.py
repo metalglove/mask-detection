@@ -51,20 +51,22 @@ while rval:
         face_img = frame[max(y-val,0):min(y+h+val,height), max(x-val,0):min(x+w+val,width)]
         #cv2.imwrite(root_path + '/test_img.jpg', face_img) # For testing to see the crop size
         img_array = process_img(face_img, (200, 200))
-        detected, val = predict(img_array, mask_detection_model)
+        detected, detection_value = predict(img_array, mask_detection_model)
         # Visualising
         color = (255,0,0) # (B,G,R)
         if detected:
             img_array = process_img(face_img, (128, 128))
-            correct, val = predict(img_array, mask_judge_model)
+            correct, mask_value = predict(img_array, mask_judge_model)
+            text = f"MASK {detection_value:.2f} - "
             if correct:
                 color = (0,255,0)
-                text = "MASK - CORRECTLY WORN" 
+                text = f"{text}CORRECTLY WORN" 
             else:
                 color = (0,0,255)
-                text = "MASK - INCORRECTLY WORN"
+                text = f"{text}INCORRECTLY WORN"
+            text = f'{text} {mask_value:.2f}'
         else:
-            text = "NO MASK"
+            text = f"NO MASK {detection_value:.2f}"
         cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
         cv2.putText(frame, f'{text}', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
     # Display
